@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: evaluation-service
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    consumer:
+      group-id: cloudscale-evaluation-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "com.cloudscale.contracts.configuration"
+
+cloudscale:
+  configuration-service:
+    base-url: ${CONFIGURATION_SERVICE_BASE_URL:http://localhost:8082}
+  evaluation:
+    cache:
+      ttl-seconds: ${EVALUATION_CACHE_TTL_SECONDS:60}
+
+server:
+  port: ${SERVER_PORT:8084}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+
+info:
+  app:
+    name: CloudScale Evaluation Service
+    phase: 5

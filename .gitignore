@@ -1,0 +1,23 @@
+# Java and Maven
+target/
+.mvn/timing.properties
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# Node and Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+coverage/
+
+# Local configuration and secrets
+.env
+!.env.example
+*.local
+
+# Operating system
+.DS_Store
+Thumbs.db
