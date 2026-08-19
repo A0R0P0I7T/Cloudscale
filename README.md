@@ -97,7 +97,7 @@ The service defaults use the local ports and infrastructure values in `.env.exam
 | Rollout Service | 8083 | `http://localhost:8083/actuator/health` |
 | Evaluation Service | 8084 | `http://localhost:8084/actuator/health` |
 | Audit Service | 8085 | `http://localhost:8085/actuator/health` |
-| PostgreSQL | 15432 | `cloudscale` user and service databases |
+| PostgreSQL | 15432 | `cloudscale` user and service databases. Note: Local CloudScale services must connect to `localhost:15432` mapped by Docker, and must not use native PostgreSQL running on `5432`. |
 | Redis | 6379 | `redis-cli -h localhost ping` |
 | Kafka external listener | 29092 | `docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list` |
 | Prometheus | 9090 | `http://localhost:9090/targets` |
