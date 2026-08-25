@@ -29,6 +29,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ConfigurationServiceIntegrationTest {
+    static {
+        System.setProperty("api.version", "1.44");
+    }
+
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("cloudscale_config")
@@ -37,6 +41,7 @@ class ConfigurationServiceIntegrationTest {
 
     @DynamicPropertySource
     static void configureDatabase(DynamicPropertyRegistry registry) {
+        POSTGRES.start();
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
