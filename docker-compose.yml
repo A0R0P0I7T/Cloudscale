@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: cloudscale-postgres
     environment:
       POSTGRES_DB: cloudscale
       POSTGRES_USER: ${POSTGRES_USER:-cloudscale}
@@ -10,6 +11,8 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - cloudscale-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
       interval: 5s
@@ -18,19 +21,25 @@ services:
 
   redis:
     image: redis:7.4-alpine
-    command: ["redis-server", "--appendonly", "yes"]
+    container_name: cloudscale-redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    command: ["sh", "-c", "if [ -n \"$$REDIS_PASSWORD\" ]; then exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\"; else exec redis-server --appendonly yes; fi"]
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    networks:
+      - cloudscale-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" ping; else redis-cli ping; fi | grep PONG"]
       interval: 5s
       timeout: 3s
       retries: 12
 
   kafka:
     image: apache/kafka:3.9.0
+    container_name: cloudscale-kafka
     environment:
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
       KAFKA_NODE_ID: 1
@@ -49,6 +58,8 @@ services:
       - "29092:29092"
     volumes:
       - kafka-data:/var/lib/kafka/data
+    networks:
+      - cloudscale-network
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
       interval: 10s
@@ -57,9 +68,12 @@ services:
 
   kafka-init:
     image: apache/kafka:3.9.0
+    container_name: cloudscale-kafka-init
     depends_on:
       kafka:
         condition: service_healthy
+    networks:
+      - cloudscale-network
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-
@@ -70,26 +84,206 @@ services:
         --create --if-not-exists --topic cloudscale.rollout-events
         --partitions 3 --replication-factor 1
 
+  auth-service:
+    image: cloudscale/auth-service:latest
+    container_name: cloudscale-auth-service
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    environment:
+      AUTH_DATABASE_URL: jdbc:postgresql://postgres:5432/cloudscale_auth
+      POSTGRES_USER: ${POSTGRES_USER:-cloudscale}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      SERVER_PORT: 8081
+    networks:
+      - cloudscale-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  config-service:
+    image: cloudscale/config-service:latest
+    container_name: cloudscale-config-service
+    build:
+      context: .
+      dockerfile: config-service/Dockerfile
+    environment:
+      CONFIG_DATABASE_URL: jdbc:postgresql://postgres:5432/cloudscale_config
+      POSTGRES_USER: ${POSTGRES_USER:-cloudscale}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SERVER_PORT: 8082
+    networks:
+      - cloudscale-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  rollout-service:
+    image: cloudscale/rollout-service:latest
+    container_name: cloudscale-rollout-service
+    build:
+      context: .
+      dockerfile: rollout-service/Dockerfile
+    environment:
+      ROLLOUT_DATABASE_URL: jdbc:postgresql://postgres:5432/cloudscale_rollout
+      POSTGRES_USER: ${POSTGRES_USER:-cloudscale}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SERVER_PORT: 8083
+    networks:
+      - cloudscale-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  evaluation-service:
+    image: cloudscale/evaluation-service:latest
+    container_name: cloudscale-evaluation-service
+    build:
+      context: .
+      dockerfile: evaluation-service/Dockerfile
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      CONFIGURATION_SERVICE_BASE_URL: http://config-service:8082
+      SERVER_PORT: 8084
+    networks:
+      - cloudscale-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      config-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  audit-service:
+    image: cloudscale/audit-service:latest
+    container_name: cloudscale-audit-service
+    build:
+      context: .
+      dockerfile: audit-service/Dockerfile
+    environment:
+      AUDIT_DATABASE_URL: jdbc:postgresql://postgres:5432/cloudscale_audit
+      POSTGRES_USER: ${POSTGRES_USER:-cloudscale}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SERVER_PORT: 8085
+    networks:
+      - cloudscale-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8085/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  gateway:
+    image: cloudscale/gateway:latest
+    container_name: cloudscale-gateway
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_PORT: 8080
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost,http://localhost:80,http://localhost:4200}
+    networks:
+      - cloudscale-network
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      config-service:
+        condition: service_healthy
+      evaluation-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  frontend:
+    image: cloudscale/frontend:latest
+    container_name: cloudscale-frontend
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    networks:
+      - cloudscale-network
+    depends_on:
+      gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
   prometheus:
     image: prom/prometheus:v3.2.1
+    container_name: cloudscale-prometheus
     ports:
       - "9090:9090"
     volumes:
       - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    networks:
+      - cloudscale-network
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
     depends_on:
-      postgres:
+      gateway:
         condition: service_healthy
-      redis:
+      config-service:
+        condition: service_healthy
+      evaluation-service:
         condition: service_healthy
 
   grafana:
     image: grafana/grafana:11.5.2
+    container_name: cloudscale-grafana
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
@@ -99,9 +293,16 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
       - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - cloudscale-network
     depends_on:
       prometheus:
         condition: service_started
+
+networks:
+  cloudscale-network:
+    name: cloudscale-network
+    driver: bridge
 
 volumes:
   postgres-data:
