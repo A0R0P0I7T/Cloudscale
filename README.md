@@ -1,200 +1,155 @@
 # CloudScale
 
-CloudScale is a distributed feature and service management platform inspired by feature delivery and configuration platforms used in production systems.
+CloudScale is a locally demonstrable, organization-scoped feature configuration and rollout platform. It includes a Java 21 / Spring Boot multi-module backend, an Angular management UI, PostgreSQL, Redis, Kafka, and Prometheus/Grafana monitoring.
 
-## Current Status
+## Current capabilities
 
-Phase 5 adds event-driven cache invalidation using Kafka propagation. Configuration Service publishes configuration events, and Evaluation Service invalidates its Redis snapshot cache using atomic revision-aware Lua scripts. Authentication, progressive rollout, and the Angular management UI remain deferred.
+- Auth Service registration/login with BCrypt password hashing and short-lived HS256 JWTs.
+- Gateway routing for Auth, Configuration, Evaluation, Rollout, and Audit APIs.
+- Organization and role enforcement at each backend service; `ADMIN` and `DEVELOPER` may mutate, while `VIEWER` is read-only except for evaluation and deterministic assignment checks.
+- Project, environment, feature-flag, targeting-rule, and immutable version management.
+- Redis-backed evaluation snapshots, targeting evaluation, configuration-service fallback, and revision-safe Kafka invalidation.
+- Transactional Configuration and Rollout outboxes; idempotent Audit consumers and organization-scoped audit history.
+- Deterministic rollout assignment, staged lifecycle controls, health observations, and automatic pause on qualifying unhealthy observations. Rollback is manual.
+- Angular workspaces for Feature Flags, Evaluation, Rollouts, and Audit History.
 
-## Architecture
+Rollout assignment is currently diagnostic; it does not alter Evaluation results because the feature-value contract has no control/treatment variants. See [`docs/architecture.md`](docs/architecture.md) for service boundaries and known limitations.
 
-The system has six independently deployable Spring Boot services:
+The shared visual system is recorded in [`DESIGN.md`](DESIGN.md); the management surface’s release-timetable brief lives in `.impeccable/surfaces/`.
 
-- API Gateway
-- Auth Service
-- Configuration Service
-- Rollout Service
-- Evaluation Service
-- Audit Service
+## Requirements
 
-See [`docs/architecture.md`](docs/architecture.md) for ownership boundaries, Kafka topics, Redis consistency, authentication, rollout health, and phase boundaries.
+- Java 21
+- Docker Desktop / Docker Engine with Compose v2 for the complete local runtime
+- Node.js 22 and npm for frontend development and verification
+- OpenSSL for generating local passwords/secrets
 
-## Technology
+The Maven Wrapper pins Maven 3.9.11. Its first run needs network access to download Maven and dependencies.
 
-- Java 21 and Spring Boot 3.x
-- Maven
-- PostgreSQL and Flyway
-- Redis
-- Apache Kafka
-- Angular and TypeScript
-- OpenTelemetry, Prometheus, and Grafana
-- Docker and GitHub Actions
-- JUnit, Spring Boot tests, and Testcontainers
+## Local setup
 
-## Repository Layout
-
-```text
-contracts/          Versioned event contract library
-gateway/            API Gateway module
-auth-service/       Identity and organization ownership
-config-service/     Configuration source of truth
-rollout-service/    Progressive rollout state and policies
-evaluation-service/ Low-latency evaluation path
-audit-service/      Kafka-driven audit history
-frontend/           Angular application
-docs/               Architecture and engineering documentation
-```
-
-## Local Configuration
-
-Copy `.env.example` to `.env` for local values. Do not commit `.env` or any real credentials.
+Copy the example environment file and set local-only values:
 
 ```bash
 cp .env.example .env
-docker compose --env-file .env up -d
 ```
 
-On Windows PowerShell, copy the file with `Copy-Item .env.example .env`.
+Generate separate values with `openssl rand -hex 24` for `POSTGRES_PASSWORD` and `GRAFANA_ADMIN_PASSWORD`, and `openssl rand -base64 48` for `JWT_SECRET`. Edit `.env` with those values. `JWT_SECRET` must be at least 32 UTF-8 bytes. Keep `.env` private and never commit it. Keep `JWT_ISSUER` identical for all services; the existing example issuer value is intentionally preserved.
 
-## Prerequisites
-
-- Java 21 for running services locally
-- Maven 3.9 or the Maven Wrapper once it is generated
-- Docker Desktop with Compose v2
-- Node.js and npm for frontend verification
-
-The current development machine must provide Java 21; the repository does not lower its compiler target to accommodate older JDKs.
-
-## Local Runtime
-
-The recommended Phase 2 workflow runs infrastructure in Docker and Spring Boot services locally. Start infrastructure first:
+Validate the Compose model without printing resolved environment values, then build and start the full stack:
 
 ```bash
-docker compose --env-file .env up -d
-docker compose ps
+docker compose --env-file .env config --quiet
+docker compose --env-file .env up --build -d
+docker compose --env-file .env ps
 ```
 
-Start each service in a separate terminal:
+The Angular/Nginx container serves the UI and proxies same-origin `/api/` requests to the Gateway. The browser does not call backend service containers directly. Backend containers use the Maven Wrapper for their builds and include `curl` for their healthchecks.
+
+Stop containers without deleting persistent local data:
 
 ```bash
-mvn spring-boot:run -pl gateway
-mvn spring-boot:run -pl auth-service
-mvn spring-boot:run -pl config-service
-mvn spring-boot:run -pl rollout-service
-mvn spring-boot:run -pl evaluation-service
-mvn spring-boot:run -pl audit-service
+docker compose --env-file .env down
 ```
 
-The service defaults use the local ports and infrastructure values in `.env.example`. When running through an IDE, configure the same variables from `.env` in each Spring Boot run configuration.
+Do not use `docker compose down -v` unless intentionally deleting all local PostgreSQL, Redis, Kafka, Prometheus, and Grafana data.
 
-## Ports
+## Local URLs and published ports
 
-| Component | Port | Verification |
-| --- | ---: | --- |
-| API Gateway | 8080 | `http://localhost:8080/actuator/health` |
-| Auth Service | 8081 | `http://localhost:8081/actuator/health` |
-| Configuration Service | 8082 | `http://localhost:8082/actuator/health` |
-| Rollout Service | 8083 | `http://localhost:8083/actuator/health` |
-| Evaluation Service | 8084 | `http://localhost:8084/actuator/health` |
-| Audit Service | 8085 | `http://localhost:8085/actuator/health` |
-| PostgreSQL | 15432 | `cloudscale` user and service databases. Note: Local CloudScale services must connect to `localhost:15432` mapped by Docker, and must not use native PostgreSQL running on `5432`. |
-| Redis | 6379 | `redis-cli -h localhost ping` |
-| Kafka external listener | 29092 | `docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list` |
-| Prometheus | 9090 | `http://localhost:9090/targets` |
-| Grafana | 3000 | `http://localhost:3000` |
+Compose binds host ports to loopback only. Auth, Configuration, Rollout, Evaluation, and Audit service ports remain internal to the Compose network.
 
-PostgreSQL creates `cloudscale_auth`, `cloudscale_config`, `cloudscale_rollout`, and `cloudscale_audit`. Auth, Rollout, and Audit remain empty until their owning phases; Configuration Service applies its Phase 3 schema through Flyway.
+| Component | Local URL / port | Purpose |
+| --- | --- | --- |
+| Management UI | `http://localhost` | Angular client |
+| API Gateway | `http://localhost:8080` | Direct API/health access for local development |
+| PostgreSQL | `localhost:15432` | Local database tooling |
+| Redis | `localhost:6379` | Local cache tooling |
+| Kafka external listener | `localhost:29092` | Host-side Kafka clients |
+| Prometheus | `http://localhost:9090/targets` | Scrape target status and PromQL |
+| Grafana | `http://localhost:3000` | Prometheus data source; login uses `.env` values |
 
-Configuration Service now applies its Flyway migrations to `cloudscale_config` and owns the `projects`, `environments`, `feature_flags`, `feature_versions`, and `targeting_rules` tables. The other service databases remain unchanged.
+The individual services expose `/actuator/health`, `/actuator/info`, and `/actuator/prometheus` only inside the Compose network. Health details are not returned. Prometheus targets the Compose DNS names on ports 8080–8085.
 
-`POSTGRES_PASSWORD` is applied by PostgreSQL only when the data volume is first initialized. If that value changes later, update the existing `cloudscale` role or remove local volumes intentionally with `docker compose down -v` before starting again.
+## Frontend-only development
 
-## Health and Monitoring
-
-Every service exposes:
-
-- `/actuator/health`
-- `/actuator/info`
-- `/actuator/prometheus`
-
-Evaluation Service exposes Redis health through the standard Actuator health response. Auth, Configuration, Rollout, and Audit Services expose PostgreSQL health. Configuration, Rollout, Evaluation, and Audit Services also configure the Kafka bootstrap address for infrastructure verification.
-
-Prometheus is provisioned to scrape all six local service ports. Grafana is provisioned with Prometheus at `http://prometheus:9090` and uses `admin` / the configured `GRAFANA_ADMIN_PASSWORD` for the local login.
-
-Stop the local runtime with:
+With the Gateway available on `localhost:8080`, run:
 
 ```bash
-docker compose down
+cd frontend
+npm ci
+npm start
 ```
 
-Use `docker compose down -v` only when intentionally deleting local PostgreSQL, Redis, Kafka, Prometheus, and Grafana data volumes.
+The Angular dev-server proxy forwards `/api` to the local Gateway. The app keeps access tokens in memory; a page reload requires signing in again.
 
-## Configuration API
+## API outline
 
-Configuration management is available directly on port `8082` under:
+All browser API calls use the Gateway's `/api/v1` paths:
 
-```text
-/api/v1/organizations/{organizationId}
+| API | Purpose |
+| --- | --- |
+| `POST /api/v1/auth/register` | Create an organization, initial `ADMIN` membership, and session token |
+| `POST /api/v1/auth/login` | Authenticate an organization member |
+| `/api/v1/organizations/{organizationId}/projects/**` | Project, environment, feature, version, and publish operations |
+| `POST /api/v1/organizations/{organizationId}/projects/{projectKey}/environments/{environmentKey}/features/{featureKey}/evaluate` | Evaluate a published feature for a stable user ID and attributes |
+| `/api/v1/organizations/{organizationId}/rollouts/**` | Create/list rollouts, manage lifecycle, record observations, inspect assignment |
+| `GET /api/v1/organizations/{organizationId}/audit-events` | Read organization-scoped event history |
+
+Tokens are signed with HS256, expire after 15 minutes by default, and carry user, organization, role, issuer, issue/expiry, and token-ID claims. Each organization API checks that the token organization exactly matches the path organization. The Gateway also replaces invalid correlation IDs and propagates the accepted ID downstream.
+
+Feature versions are immutable. Publishing a draft archives the previous published version and updates the published pointer/revision in one database transaction. Targeting conditions within a rule use AND semantics; rules are evaluated by ascending priority.
+
+## Observability
+
+Prometheus is configured to scrape the six service targets at `/actuator/prometheus`. Grafana is provisioned with the Prometheus data source; no prebuilt dashboard is included. Useful PromQL examples:
+
+```promql
+# Evaluation cache hit fraction over five minutes
+sum(rate(cloudscale_evaluation_cache_hits_total[5m]))
+/
+(
+  sum(rate(cloudscale_evaluation_cache_hits_total[5m]))
+  + sum(rate(cloudscale_evaluation_cache_misses_total[5m]))
+)
+
+# Configuration fetch rate after cache misses/errors
+sum(rate(cloudscale_evaluation_configuration_fetches_total[5m]))
+
+# Mean observed evaluation duration (seconds)
+sum(rate(cloudscale_evaluation_duration_seconds_sum[5m]))
+/
+sum(rate(cloudscale_evaluation_duration_seconds_count[5m]))
+
+# Configuration event retry rate in Evaluation
+sum(rate(cloudscale_evaluation_configuration_events_retries_total[5m]))
 ```
 
-The Phase 3 API supports project and environment management, feature flag metadata, draft feature versions, version history, and publishing. Organization IDs are opaque tenant identifiers until Auth Service and JWT authorization are implemented.
-
-Feature versions are immutable after creation. Publishing a draft archives the previous published version and updates the feature's published version pointer in one PostgreSQL transaction.
-
-Configuration event contracts exist in the `contracts` module, and Configuration Service publishes `ConfigurationEvent` records after successfully committing database transactions. Audit integration remains an event-driven boundary for a later phase.
-
-## Evaluation API
-
-Evaluation is available directly on port `8084`:
-
-```text
-POST /api/v1/organizations/{organizationId}/projects/{projectKey}/environments/{environmentKey}/features/{featureKey}/evaluate
-```
-
-Example request:
-
-```json
-{
-  "userId": "user-123",
-  "attributes": {
-    "plan": "pro"
-  }
-}
-```
-
-Evaluation Service reads a published configuration snapshot from Redis and calls Configuration Service synchronously on a cache miss. Snapshots use:
-
-```text
-cloudscale:evaluation-config:{organizationId}:{projectKey}:{environmentKey}:{featureKey}
-```
-
-The default TTL is 60 seconds and can be changed with `EVALUATION_CACHE_TTL_SECONDS`. Redis is an eventually consistent cache; PostgreSQL remains authoritative through Configuration Service. Redis read failures fall back to Configuration Service, while a Configuration Service failure on a cache miss returns `503 CONFIGURATION_UNAVAILABLE`.
-
-Phase 4 supports only explicit targeting rules using `EQUALS`, `NOT_EQUALS`, `IN`, and `NOT_IN`. Conditions within one rule use AND semantics, and rules are evaluated by ascending priority. Percentage rollout and deterministic hashing are deferred.
-
-Evaluation metrics include cache hits, cache misses, cache errors, configuration fetches, configuration fetch errors, evaluation duration, and Kafka event processing outcomes. Evaluation Service acts as a Kafka consumer that performs atomic, revision-aware Redis cache invalidations to reduce evaluation latency and data staleness.
-
-Focused Configuration Service verification:
-
-```bash
-mvn -pl config-service -am clean verify
-```
+These are process-lifetime counters/timers and do not imply a measured service-level objective. Evaluation latency percentiles require a running, representative workload and histogram configuration; they are not reported as measured in this repository’s local audit.
 
 ## Verification
 
 From the repository root:
 
 ```bash
-mvn validate
-mvn clean verify
+./mvnw -B verify
 ```
 
-From `frontend/` after installing dependencies:
+If your shell cannot locate Java, set `JAVA_HOME` to a JDK 21 installation and prepend `$JAVA_HOME/bin` to `PATH` before invoking the wrapper. In environments with a conflicting Maven startup file, use `MAVEN_SKIP_RC=1`.
+
+For a focused backend module:
+
+```bash
+./mvnw -B -pl rollout-service -am test
+```
+
+From `frontend/`:
 
 ```bash
 npm ci
 npm run build
 npm test
+npm test -- --code-coverage
+npm audit
 ```
 
-The Maven wrapper should be generated and committed before the first runtime implementation phase so all contributors use a pinned Maven version.
+Testcontainers tests run when Docker is available and skip otherwise. Docker-backed integration tests, Compose startup, Prometheus scraping, and runtime performance checks must be run on a machine with a working Docker daemon. See [`docs/metrics-report.md`](docs/metrics-report.md) for the latest exact results and unmeasured metrics, and [`docs/audit-report.md`](docs/audit-report.md) for the audit/status matrix.

@@ -3,6 +3,7 @@ package com.cloudscale.evaluation.client;
 import com.cloudscale.evaluation.error.ConfigurationUnavailableException;
 import com.cloudscale.evaluation.error.FeatureNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -27,15 +28,19 @@ public class ConfigurationClient {
             String projectKey,
             String environmentKey,
             String featureKey,
+            String authorizationHeader,
             String correlationId
     ) {
         try {
-            return restClient.get()
+            RestClient.RequestHeadersSpec<?> requestSpec = restClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/v1/organizations/{organizationId}/projects/{projectKey}/environments/{environmentKey}/features/{featureKey}/evaluation-config")
                             .build(organizationId, projectKey, environmentKey, featureKey))
-                    .header("X-Correlation-Id", correlationId)
-                    .retrieve()
+                    .header("X-Correlation-Id", correlationId);
+            if (authorizationHeader != null && authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7)) {
+                requestSpec = requestSpec.header(HttpHeaders.AUTHORIZATION, authorizationHeader);
+            }
+            return requestSpec.retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
                         if (response.getStatusCode().value() == 404) {
                             throw new FeatureNotFoundException("Feature '" + featureKey + "' was not found");

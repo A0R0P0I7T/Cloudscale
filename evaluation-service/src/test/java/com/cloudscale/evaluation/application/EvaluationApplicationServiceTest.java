@@ -45,10 +45,12 @@ class EvaluationApplicationServiceTest {
         EvaluationResponse expected = new EvaluationResponse("checkout-v2", true, null,
                 com.cloudscale.evaluation.api.EvaluationReason.DEFAULT_VALUE, configuration.publishedVersionId(), 2);
         when(cache.get(any())).thenReturn(CacheLookup.miss());
-        when(configurationClient.getEvaluationConfiguration(any(), any(), any(), any(), any())).thenReturn(configuration);
+        when(configurationClient.getEvaluationConfiguration(any(), any(), any(), any(), any(), any()))
+                .thenReturn(configuration);
         when(featureEvaluator.evaluate(configuration, request)).thenReturn(expected);
 
-        EvaluationResponse response = service.evaluate(organizationId, "project", "staging", "checkout-v2", request, "corr-1");
+        EvaluationResponse response = service.evaluate(organizationId, "project", "staging", "checkout-v2",
+                request, "Bearer user-token", "corr-1");
 
         assertThat(response).isEqualTo(expected);
         ArgumentCaptor<String> key = ArgumentCaptor.forClass(String.class);
@@ -56,6 +58,8 @@ class EvaluationApplicationServiceTest {
         assertThat(key.getValue()).isEqualTo("cloudscale:evaluation-config:" + organizationId + ":project:staging:checkout-v2");
         assertThat(key.getValue()).doesNotContain("secret-user");
         verify(cache).put(key.getValue(), configuration);
+        verify(configurationClient).getEvaluationConfiguration(organizationId, "project", "staging", "checkout-v2",
+                "Bearer user-token", "corr-1");
     }
 
     @Test
@@ -69,10 +73,11 @@ class EvaluationApplicationServiceTest {
         when(cache.get(any())).thenReturn(CacheLookup.hit(configuration));
         when(featureEvaluator.evaluate(configuration, request)).thenReturn(expected);
 
-        assertThat(service.evaluate(UUID.randomUUID(), "project", "staging", "checkout-v2", request, "corr-1"))
+        assertThat(service.evaluate(UUID.randomUUID(), "project", "staging", "checkout-v2",
+                request, "Bearer user-token", "corr-1"))
                 .isEqualTo(expected);
 
-        verify(configurationClient, never()).getEvaluationConfiguration(any(), any(), any(), any(), any());
+        verify(configurationClient, never()).getEvaluationConfiguration(any(), any(), any(), any(), any(), any());
         verify(cache, never()).put(any(), any());
     }
 

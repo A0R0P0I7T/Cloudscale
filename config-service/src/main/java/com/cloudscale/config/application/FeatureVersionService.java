@@ -25,8 +25,6 @@ import com.cloudscale.contracts.configuration.ConfigurationEvent;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -153,7 +151,7 @@ public class FeatureVersionService {
         // Build event inside transaction while DB state is known; publish only after commit
         ConfigurationEvent event = ConfigurationEventFactory.published(
                 project, environment, updatedFlag, publishedVersion, correlationId);
-        registerAfterCommitPublication(event);
+        eventPublisher.publish(event);
 
         return publishedVersion;
     }
@@ -181,15 +179,6 @@ public class FeatureVersionService {
                         HttpStatus.INTERNAL_SERVER_ERROR));
         return PublishedFeatureConfigurationResponse.from(featureFlag, publishedVersion,
                 targetingRuleRepository.findAllByVersion(publishedVersion.id()));
-    }
-
-    private void registerAfterCommitPublication(ConfigurationEvent event) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                eventPublisher.publish(event);
-            }
-        });
     }
 
     private FeatureVersion insertDraft(UUID featureFlagId, JsonNode value, List<TargetingRuleRequest> rules) {
@@ -244,4 +233,3 @@ public class FeatureVersionService {
         }
     }
 }
-

@@ -27,12 +27,14 @@ public class EvaluationController {
             @PathVariable String environmentKey,
             @PathVariable String featureKey,
             @Valid @RequestBody EvaluationRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @RequestHeader(value = "X-Correlation-Id", required = false) String correlationId
     ) {
         String effectiveCorrelationId = correlationId == null || correlationId.isBlank()
                 ? UUID.randomUUID().toString()
                 : correlationId;
         return evaluationApplicationService.evaluate(
-                organizationId, projectKey, environmentKey, featureKey, request, effectiveCorrelationId);
+                organizationId, projectKey, environmentKey, featureKey, request,
+                authorizationHeader, effectiveCorrelationId);
     }
 }

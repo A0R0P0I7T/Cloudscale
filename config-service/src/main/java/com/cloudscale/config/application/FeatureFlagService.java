@@ -16,8 +16,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.util.List;
@@ -103,12 +101,7 @@ public class FeatureFlagService {
             Environment environment = environmentService.get(organizationId, projectKey, environmentKey);
             ConfigurationEvent event = ConfigurationEventFactory.enabledOrDisabled(
                     project, environment, updatedFlag, request.enabled(), correlationId);
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    eventPublisher.publish(event);
-                }
-            });
+            eventPublisher.publish(event);
         }
 
         return updatedFlag;
@@ -122,4 +115,3 @@ public class FeatureFlagService {
                         "Feature '" + featureKey + "' was not found"));
     }
 }
-

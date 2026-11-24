@@ -1,0 +1,4 @@
+cloudscale-rollout-service | 2026-11-24T14:37:45.561Z WARN ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException
+cloudscale-rollout-service | Caused by: No qualifying bean of type 'com.cloudscale.rollout.domain.RolloutRules' available: expected at least 1 bean which qualifies as autowire candidate.
+cloudscale-rollout-service | Description: Parameter 2 of constructor in com.cloudscale.rollout.application.RolloutApplicationService required a bean of type 'com.cloudscale.rollout.domain.RolloutRules' that could not be found.
+cloudscale-rollout-service | Action: Consider defining a bean of type 'com.cloudscale.rollout.domain.RolloutRules' in your configuration.

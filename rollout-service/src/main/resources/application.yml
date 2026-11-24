@@ -4,7 +4,7 @@ spring:
   datasource:
     url: ${ROLLOUT_DATABASE_URL:${DATABASE_URL:jdbc:postgresql://localhost:15432/cloudscale_rollout}}
     username: ${POSTGRES_USER:cloudscale}
-    password: ${POSTGRES_PASSWORD:change-me}
+    password: ${POSTGRES_PASSWORD:}
     hikari:
       maximum-pool-size: 5
   flyway:
@@ -12,6 +12,18 @@ spring:
     locations: classpath:db/migration
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+
+cloudscale:
+  jwt:
+    issuer: ${JWT_ISSUER:cloudscale-auth}
+    secret: ${JWT_SECRET:}
 
 server:
   port: ${SERVER_PORT:8083}
@@ -25,9 +37,8 @@ management:
     health:
       probes:
         enabled: true
-      show-details: always
+      show-details: never
 
 info:
   app:
     name: CloudScale Rollout Service
-    phase: 2

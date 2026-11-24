@@ -1,0 +1,12 @@
+package com.cloudscale.contracts.rollout;
+
+public enum RolloutEventType {
+    ROLLOUT_CREATED,
+    ROLLOUT_STARTED,
+    ROLLOUT_PAUSED,
+    ROLLOUT_RESUMED,
+    ROLLOUT_STAGE_ADVANCED,
+    ROLLOUT_COMPLETED,
+    ROLLOUT_ROLLED_BACK,
+    HEALTH_OBSERVATION_RECORDED
+}

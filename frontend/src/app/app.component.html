@@ -1,0 +1,769 @@
+@if (!session) {
+  <main class="auth-layout">
+    <header class="auth-brand">
+      <span class="brand-mark" aria-hidden="true">CS</span>
+      <span class="brand-name">CloudScale</span>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-context">Feature delivery</span>
+    </header>
+
+    <section class="auth-panel" aria-labelledby="auth-title">
+      <div class="auth-intro">
+        <h1 id="auth-title">{{ authMode === 'login' ? 'Sign in to CloudScale' : 'Create an organization' }}</h1>
+        <p class="intro-copy">
+          {{ authMode === 'login'
+            ? 'Manage feature configuration, evaluate changes, and review rollout history.'
+            : 'Create an organization and start managing feature delivery.' }}
+        </p>
+        <div class="auth-switch" role="group" aria-label="Authentication mode">
+          <button type="button" [class.active]="authMode === 'login'" (click)="authMode = 'login'">Sign in</button>
+          <button type="button" [class.active]="authMode === 'register'" (click)="authMode = 'register'">Register</button>
+        </div>
+      </div>
+
+      @if (authMode === 'login') {
+        <form class="auth-form" data-testid="auth-form" (ngSubmit)="signIn()" #login="ngForm">
+          <label for="login-org">Organization slug</label>
+          <input id="login-org" name="organizationSlug" [(ngModel)]="loginForm.organizationSlug"
+                 autocomplete="organization" required maxlength="64" placeholder="northstar">
+
+          <label for="login-email">Email</label>
+          <input id="login-email" name="email" type="email" [(ngModel)]="loginForm.email"
+                 autocomplete="username" required maxlength="255" placeholder="you@company.com">
+
+          <label for="login-password">Password</label>
+          <input id="login-password" name="password" type="password" [(ngModel)]="loginForm.password"
+                 autocomplete="current-password" required minlength="12" maxlength="72">
+
+          @if (authError) {
+            <p class="form-error" role="alert">{{ authError }}</p>
+          }
+
+          <button class="button button-primary auth-submit" type="submit"
+                  [disabled]="login.invalid || busyAction === 'login'">
+            {{ busyAction === 'login' ? 'Signing in…' : 'Sign in' }}
+          </button>
+        </form>
+      } @else {
+        <form class="auth-form" data-testid="auth-form" (ngSubmit)="register()" #registration="ngForm">
+          <label for="register-org-name">Organization name</label>
+          <input id="register-org-name" name="organizationName" [(ngModel)]="registerForm.organizationName"
+                 autocomplete="organization" required maxlength="120" placeholder="Northstar">
+
+          <label for="register-org-slug">Organization slug</label>
+          <input id="register-org-slug" name="organizationSlug" [(ngModel)]="registerForm.organizationSlug"
+                 required maxlength="64" pattern="[a-z0-9][a-z0-9._-]{0,63}" placeholder="northstar">
+
+          <label for="register-name">Full name</label>
+          <input id="register-name" name="fullName" [(ngModel)]="registerForm.fullName"
+                 autocomplete="name" required maxlength="120">
+
+          <label for="register-email">Email</label>
+          <input id="register-email" name="email" type="email" [(ngModel)]="registerForm.email"
+                 autocomplete="email" required maxlength="255" placeholder="you@company.com">
+
+          <label for="register-password">Password <span class="field-hint">12 characters minimum</span></label>
+          <input id="register-password" name="password" type="password" [(ngModel)]="registerForm.password"
+                 autocomplete="new-password" required minlength="12" maxlength="72">
+
+          @if (authError) {
+            <p class="form-error" role="alert">{{ authError }}</p>
+          }
+
+          <button class="button button-primary auth-submit" type="submit"
+                  [disabled]="registration.invalid || busyAction === 'register'">
+            {{ busyAction === 'register' ? 'Creating…' : 'Create organization' }}
+          </button>
+        </form>
+      }
+    </section>
+
+    <footer class="auth-footer">
+      <span>PostgreSQL is the source of truth</span>
+      <span>Local management workspace</span>
+    </footer>
+  </main>
+} @else {
+  <div class="application-shell">
+    <aside class="sidebar">
+      <a class="brand-lockup" href="/" aria-label="CloudScale home">
+        <span class="brand-mark" aria-hidden="true">CS</span>
+        <span>CloudScale</span>
+      </a>
+
+      <div class="organization-block">
+        <span class="field-label">Organization</span>
+        <strong>{{ session.organizationName }}</strong>
+        <span class="org-slug">{{ session.organizationSlug }}</span>
+      </div>
+
+      <nav class="workspace-nav" data-testid="workspace-nav" aria-label="Management workspaces">
+        <button type="button" [class.active]="workspace === 'features'"
+                [attr.aria-current]="workspace === 'features' ? 'page' : null"
+                (click)="setWorkspace('features')">
+          <span>Feature flags</span>
+        </button>
+        <button type="button" [class.active]="workspace === 'evaluation'"
+                [attr.aria-current]="workspace === 'evaluation' ? 'page' : null"
+                (click)="setWorkspace('evaluation')">
+          <span>Evaluation</span>
+        </button>
+        <button type="button" [class.active]="workspace === 'rollouts'"
+                [attr.aria-current]="workspace === 'rollouts' ? 'page' : null"
+                (click)="setWorkspace('rollouts')">
+          <span>Rollouts</span>
+        </button>
+        <button type="button" [class.active]="workspace === 'audit'"
+                [attr.aria-current]="workspace === 'audit' ? 'page' : null"
+                (click)="setWorkspace('audit')">
+          <span>Audit history</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <span class="role-pill">{{ session.role }}</span>
+        <button type="button" class="signout-button" (click)="signOut()">Sign out</button>
+      </div>
+    </aside>
+
+    <div class="main-column">
+      <header class="context-bar">
+        <div class="context-selectors">
+          <label>
+            <span class="field-label">Project</span>
+            <select name="project" [(ngModel)]="selectedProjectKey" (ngModelChange)="changeProject()"
+                    [disabled]="projects.length === 0" [ngModelOptions]="{standalone: true}">
+              <option value="">Select project</option>
+              @for (project of projects; track project.id) {
+                <option [value]="project.key">{{ project.name }}</option>
+              }
+            </select>
+          </label>
+          <span class="context-divider" aria-hidden="true">/</span>
+          <label>
+            <span class="field-label">Environment</span>
+            <select name="environment" [(ngModel)]="selectedEnvironmentKey"
+                    (ngModelChange)="changeEnvironment()" [disabled]="environments.length === 0"
+                    [ngModelOptions]="{standalone: true}">
+              <option value="">Select environment</option>
+              @for (environment of environments; track environment.id) {
+                <option [value]="environment.key">{{ environment.name }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <div class="session-indicator">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>{{ session.role }}</span>
+        </div>
+      </header>
+
+      <main class="workspace-content">
+        @if (errorMessage) {
+          <div class="message message-error" role="alert">
+            <span>{{ errorMessage }}</span>
+            <button type="button" class="message-dismiss" aria-label="Dismiss error" (click)="errorMessage = ''">×</button>
+          </div>
+        }
+        @if (successMessage) {
+          <div class="message message-success" role="status">
+            <span>{{ successMessage }}</span>
+            <button type="button" class="message-dismiss" aria-label="Dismiss confirmation" (click)="successMessage = ''">×</button>
+          </div>
+        }
+        <p class="sr-only" aria-live="polite">{{ busyAction ? 'Working' : '' }}</p>
+
+        @if (workspace === 'features') {
+          <section aria-labelledby="features-title">
+            <div class="page-heading">
+              <div>
+                <h1 id="features-title">Feature flags</h1>
+                <p>Versioned configuration for a selected environment.</p>
+              </div>
+              @if (canWrite && selectedEnvironment) {
+                <button type="button" class="button button-primary" (click)="featureFormOpen = !featureFormOpen">
+                  {{ featureFormOpen ? 'Close form' : 'New feature' }}
+                </button>
+              }
+            </div>
+
+            @if (!projects.length && busyAction === 'load-projects') {
+              <div class="loading-block" role="status"><span class="skeleton-line"></span><span>Loading projects</span></div>
+            } @else if (!projects.length) {
+              <section class="empty-state" aria-labelledby="project-empty-title">
+                <span class="empty-index">01</span>
+                <h2 id="project-empty-title">Create a project to begin</h2>
+                <p>Projects group the environments and feature configuration your team manages.</p>
+                @if (canWrite) {
+                  <button type="button" class="button button-primary" (click)="projectFormOpen = !projectFormOpen">
+                    Create project
+                  </button>
+                } @else {
+                  <p class="inline-note">Ask an administrator or developer to create a project for this organization.</p>
+                }
+              </section>
+            } @else if (!environments.length && selectedProject) {
+              <section class="empty-state" aria-labelledby="environment-empty-title">
+                <span class="empty-index">02</span>
+                <h2 id="environment-empty-title">Add an environment</h2>
+                <p>{{ selectedProject.name }} has no environments yet.</p>
+                @if (canWrite) {
+                  <button type="button" class="button button-primary"
+                          (click)="environmentFormOpen = !environmentFormOpen">Create environment</button>
+                } @else {
+                  <p class="inline-note">Ask an administrator or developer to create an environment.</p>
+                }
+              </section>
+            } @else if (featuresLoading) {
+              <div class="loading-table" role="status" aria-label="Loading feature flags">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            } @else {
+              @if (featureFormOpen && canWrite) {
+                <form class="inline-form feature-create-form" (ngSubmit)="createFeature()" #featureForm="ngForm">
+                  <div class="form-heading">
+                    <h2>New feature</h2>
+                    <span>Creates the first draft version in the selected environment.</span>
+                  </div>
+                  <div class="form-grid">
+                    <label>Key
+                      <input name="featureKey" [(ngModel)]="newFeature.key" required maxlength="64"
+                             pattern="[a-z0-9][a-z0-9._-]{0,63}" placeholder="checkout-v2">
+                    </label>
+                    <label>Name
+                      <input name="featureName" [(ngModel)]="newFeature.name" required maxlength="120"
+                             placeholder="Checkout redesign">
+                    </label>
+                    <label class="wide-field">Description
+                      <input name="featureDescription" [(ngModel)]="newFeature.description" maxlength="500"
+                             placeholder="What changes when this feature is enabled?">
+                    </label>
+                    <label class="wide-field">Default value · JSON
+                      <textarea name="featureValue" [(ngModel)]="newFeature.valueJson" rows="3" required
+                                spellcheck="false" placeholder='{"variant":"control"}'></textarea>
+                    </label>
+                    <label class="wide-field">Targeting rules · JSON array
+                      <textarea name="featureRules" [(ngModel)]="newFeature.targetingRulesJson" rows="3"
+                                spellcheck="false" placeholder="[]"></textarea>
+                    </label>
+                    <label class="check-field">
+                      <input type="checkbox" name="featureEnabled" [(ngModel)]="newFeature.enabled">
+                      Enable after publishing
+                    </label>
+                  </div>
+                  <div class="form-actions">
+                    <button type="button" class="button button-secondary" (click)="featureFormOpen = false">Cancel</button>
+                    <button type="submit" class="button button-primary"
+                            [disabled]="featureForm.invalid || busyAction === 'feature'">
+                      {{ busyAction === 'feature' ? 'Creating…' : 'Create feature' }}
+                    </button>
+                  </div>
+                </form>
+              }
+
+              @if (features.length === 0) {
+                <section class="empty-state compact-empty">
+                  <span class="empty-index">—</span>
+                  <h2>No feature flags in {{ selectedEnvironment?.name }}</h2>
+                  <p>Create a flag to define a default value and optional targeting rules.</p>
+                  @if (canWrite) {
+                    <button type="button" class="button button-primary" (click)="featureFormOpen = true">Create feature</button>
+                  }
+                </section>
+              } @else {
+                <div class="feature-layout">
+                  <section class="table-region" aria-label="Feature flags">
+                    <div class="table-caption">
+                      <span>{{ features.length }} feature{{ features.length === 1 ? '' : 's' }}</span>
+                      <span class="table-context">{{ selectedProject?.key }} / {{ selectedEnvironment?.key }}</span>
+                    </div>
+                    <div class="table-scroll">
+                      <table>
+                        <thead>
+                          <tr><th>Feature</th><th>State</th><th>Revision</th><th>Published</th></tr>
+                        </thead>
+                        <tbody>
+                          @for (feature of features; track feature.id) {
+                            <tr [class.selected-row]="selectedFeature?.id === feature.id">
+                              <td>
+                                <button type="button" class="feature-link" (click)="selectFeature(feature)">
+                                  <span>{{ feature.key }}</span>
+                                  <small>{{ feature.name }}</small>
+                                </button>
+                              </td>
+                              <td>
+                                <span class="state-tag" [class.state-on]="feature.enabled"
+                                      [class.state-off]="!feature.enabled">
+                                  <span class="status-dot" aria-hidden="true"></span>
+                                  {{ feature.enabled ? 'Enabled' : 'Disabled' }}
+                                </span>
+                              </td>
+                              <td class="numeric-cell">{{ feature.revision }}</td>
+                              <td class="version-cell">{{ feature.publishedVersionId ? 'Published' : 'No version' }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+
+                  @if (selectedFeature) {
+                    <aside class="detail-region" aria-labelledby="feature-detail-title">
+                      <div class="detail-heading">
+                        <div>
+                          <span class="detail-key">{{ selectedFeature.key }}</span>
+                          <h2 id="feature-detail-title">{{ selectedFeature.name }}</h2>
+                        </div>
+                        @if (canWrite) {
+                          <button type="button" class="button button-tertiary"
+                                  (click)="toggleFeature(selectedFeature)"
+                                  [disabled]="busyAction === 'toggle-feature'">
+                            {{ selectedFeature.enabled ? 'Disable' : 'Enable' }}
+                          </button>
+                        }
+                      </div>
+                      @if (selectedFeature.description) {
+                        <p class="detail-description">{{ selectedFeature.description }}</p>
+                      }
+                      <dl class="metadata-list">
+                        <div><dt>Revision</dt><dd>{{ selectedFeature.revision }}</dd></div>
+                        <div><dt>State</dt><dd>{{ selectedFeature.enabled ? 'Enabled' : 'Disabled' }}</dd></div>
+                        <div><dt>Published version</dt><dd>{{ selectedFeature.publishedVersionId ? 'Available' : 'None' }}</dd></div>
+                      </dl>
+
+                      <div class="subsection-heading">
+                        <h3>Versions</h3>
+                        @if (canWrite) {
+                          <button type="button" class="text-action" (click)="draftFormOpen = !draftFormOpen">
+                            {{ draftFormOpen ? 'Close' : 'New draft' }}
+                          </button>
+                        }
+                      </div>
+
+                      @if (versions.length === 0 && busyAction === 'load-versions') {
+                        <p class="subtle-copy">Loading versions…</p>
+                      } @else if (versions.length === 0) {
+                        <p class="subtle-copy">No versions are available.</p>
+                      } @else {
+                        <div class="version-list">
+                          @for (version of versions; track version.id) {
+                            <div class="version-row">
+                              <div class="version-info">
+                                <strong>Version {{ version.versionNumber }}</strong>
+                                <span class="state-tag state-version">{{ version.status }}</span>
+                              </div>
+                              @if (version.status === 'DRAFT' && canWrite) {
+                                <button type="button" class="text-action"
+                                        (click)="publish(version)"
+                                        [disabled]="busyAction === 'publish'">
+                                  Publish
+                                </button>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+
+                      @if (draftFormOpen && canWrite) {
+                        <form class="draft-form" (ngSubmit)="createDraft()" #draftForm="ngForm">
+                          <label>Version value · JSON
+                            <textarea name="draftValue" [(ngModel)]="draftValueJson" rows="3" required
+                                      spellcheck="false" placeholder='{"variant":"treatment"}'></textarea>
+                          </label>
+                          <label>Targeting rules · JSON array
+                            <textarea name="draftRules" [(ngModel)]="draftRulesJson" rows="3"
+                                      spellcheck="false" placeholder="[]"></textarea>
+                          </label>
+                          <button type="submit" class="button button-primary"
+                                  [disabled]="draftForm.invalid || busyAction === 'draft'">
+                            {{ busyAction === 'draft' ? 'Saving…' : 'Save draft' }}
+                          </button>
+                        </form>
+                      }
+                    </aside>
+                  }
+                </div>
+              }
+            }
+
+            @if (projectFormOpen && canWrite) {
+              <form class="inline-form short-form" (ngSubmit)="createProject()" #projectForm="ngForm">
+                <h2>Create project</h2>
+                <label>Project key
+                  <input name="projectKey" [(ngModel)]="newProject.key" required maxlength="64"
+                         pattern="[a-z0-9][a-z0-9._-]{0,63}" placeholder="web-store">
+                </label>
+                <label>Name
+                  <input name="projectName" [(ngModel)]="newProject.name" required maxlength="120"
+                         placeholder="Web store">
+                </label>
+                <label>Description
+                  <input name="projectDescription" [(ngModel)]="newProject.description" maxlength="500">
+                </label>
+                <div class="form-actions">
+                  <button type="button" class="button button-secondary" (click)="projectFormOpen = false">Cancel</button>
+                  <button type="submit" class="button button-primary"
+                          [disabled]="projectForm.invalid || busyAction === 'project'">
+                    {{ busyAction === 'project' ? 'Creating…' : 'Create project' }}
+                  </button>
+                </div>
+              </form>
+            }
+
+            @if (environmentFormOpen && canWrite) {
+              <form class="inline-form short-form" (ngSubmit)="createEnvironment()" #environmentForm="ngForm">
+                <h2>Create environment</h2>
+                <label>Environment key
+                  <input name="environmentKey" [(ngModel)]="newEnvironment.key" required maxlength="64"
+                         pattern="[a-z0-9][a-z0-9._-]{0,63}" placeholder="staging">
+                </label>
+                <label>Name
+                  <input name="environmentName" [(ngModel)]="newEnvironment.name" required maxlength="120"
+                         placeholder="Staging">
+                </label>
+                <label>Description
+                  <input name="environmentDescription" [(ngModel)]="newEnvironment.description" maxlength="500">
+                </label>
+                <div class="form-actions">
+                  <button type="button" class="button button-secondary" (click)="environmentFormOpen = false">Cancel</button>
+                  <button type="submit" class="button button-primary"
+                          [disabled]="environmentForm.invalid || busyAction === 'environment'">
+                    {{ busyAction === 'environment' ? 'Creating…' : 'Create environment' }}
+                  </button>
+                </div>
+              </form>
+            }
+          </section>
+        }
+
+        @if (workspace === 'evaluation') {
+          <section aria-labelledby="evaluation-title">
+            <div class="page-heading">
+              <div>
+                <h1 id="evaluation-title">Evaluation</h1>
+                <p>Inspect the value returned for a user and attribute set.</p>
+              </div>
+            </div>
+            @if (!selectedFeature || !selectedEnvironment) {
+              <section class="empty-state">
+                <span class="empty-index">—</span>
+                <h2>Select a feature to evaluate</h2>
+                <p>Choose a project, environment, and feature from the context bar or Feature Flags workspace.</p>
+              </section>
+            } @else {
+              <div class="evaluation-layout">
+                <form class="operation-panel" (ngSubmit)="evaluate()" #evaluationForm="ngForm">
+                  <div class="panel-heading">
+                    <div>
+                      <span class="detail-key">{{ selectedFeature.key }}</span>
+                      <h2>{{ selectedFeature.name }}</h2>
+                    </div>
+                    <span class="state-tag" [class.state-on]="selectedFeature.enabled"
+                          [class.state-off]="!selectedFeature.enabled">
+                      {{ selectedFeature.enabled ? 'Enabled' : 'Disabled' }}
+                    </span>
+                  </div>
+                  <label>Stable user ID
+                    <input name="evaluationUserId" [(ngModel)]="evaluationUserId" required maxlength="255"
+                           autocomplete="off" placeholder="customer-1042">
+                  </label>
+                  <label>Attributes · JSON object
+                    <textarea name="evaluationAttributes" [(ngModel)]="evaluationAttributesJson" rows="7"
+                              spellcheck="false"></textarea>
+                  </label>
+                  <button type="submit" class="button button-primary"
+                          [disabled]="evaluationForm.invalid || !selectedFeature.publishedVersionId || busyAction === 'evaluate'">
+                    {{ busyAction === 'evaluate' ? 'Evaluating…' : 'Evaluate feature' }}
+                  </button>
+                  @if (!selectedFeature.publishedVersionId) {
+                    <p class="inline-note">Publish a version before evaluating this feature.</p>
+                  }
+                </form>
+
+                <section class="result-panel" aria-labelledby="evaluation-result-title">
+                  <div class="panel-heading">
+                    <h2 id="evaluation-result-title">Result</h2>
+                    @if (evaluationResult) {
+                      <span class="state-tag" [class.state-on]="evaluationResult.enabled"
+                            [class.state-off]="!evaluationResult.enabled">
+                        {{ evaluationResult.enabled ? 'Enabled' : 'Disabled' }}
+                      </span>
+                    }
+                  </div>
+                  @if (evaluationResult) {
+                    <dl class="metadata-list">
+                      <div><dt>Reason</dt><dd>{{ evaluationResult.reason }}</dd></div>
+                      <div><dt>Version</dt><dd>{{ evaluationResult.versionNumber ?? 'None' }}</dd></div>
+                    </dl>
+                    <h3>Returned value</h3>
+                    <pre class="json-output">{{ evaluationResult.value | json }}</pre>
+                  } @else {
+                    <div class="empty-result">
+                      <span class="empty-index">—</span>
+                      <p>Choose a user context and run an evaluation to inspect the returned value.</p>
+                    </div>
+                  }
+                </section>
+              </div>
+            }
+          </section>
+        }
+
+        @if (workspace === 'rollouts') {
+          <section aria-labelledby="rollouts-title">
+            <div class="page-heading">
+              <div>
+                <h1 id="rollouts-title">Rollouts</h1>
+                <p>Stage exposure deliberately and pause on reported health signals.</p>
+              </div>
+              @if (canWrite && selectedFeature && selectedEnvironment) {
+                <button type="button" class="button button-primary" (click)="rolloutFormOpen = !rolloutFormOpen">
+                  {{ rolloutFormOpen ? 'Close form' : 'New rollout' }}
+                </button>
+              }
+            </div>
+            <p class="inline-note rollout-limit">
+              Assignment is deterministic and available for inspection; percentage exposure is not yet applied to Evaluation values.
+              Health policies can pause a rollout. Rollback is manual.
+            </p>
+
+            @if (rolloutFormOpen && canWrite) {
+              <form class="inline-form rollout-form" (ngSubmit)="createRollout()" #rolloutForm="ngForm">
+                <div class="form-heading">
+                  <h2>New rollout</h2>
+                  <span>{{ selectedFeature?.key }} · {{ selectedEnvironment?.key }}</span>
+                </div>
+                <label>Stages · target percentage : minutes
+                  <input name="stages" [(ngModel)]="newRollout.stagesText" required
+                         placeholder="10:5,50:10,100:15">
+                </label>
+                <label class="check-field">
+                  <input type="checkbox" name="healthEnabled" [(ngModel)]="newRollout.healthEnabled">
+                  Pause on unhealthy observations
+                </label>
+                @if (newRollout.healthEnabled) {
+                  <div class="form-grid">
+                    <label>Metric
+                      <select name="metric" [(ngModel)]="newRollout.metric">
+                        <option value="ERROR_RATE">Error rate</option>
+                        <option value="LATENCY_MS">Latency (ms)</option>
+                      </select>
+                    </label>
+                    <label>Threshold
+                      <input name="threshold" type="number" min="0.01" step="0.01"
+                             [(ngModel)]="newRollout.threshold" required>
+                    </label>
+                    <label>Minimum requests
+                      <input name="minimumRequestCount" type="number" min="1"
+                             [(ngModel)]="newRollout.minimumRequestCount" required>
+                    </label>
+                    <label>Evaluation window · seconds
+                      <input name="evaluationWindowSeconds" type="number" min="1"
+                             [(ngModel)]="newRollout.evaluationWindowSeconds" required>
+                    </label>
+                    <label>Resume cooldown · seconds
+                      <input name="cooldownSeconds" type="number" min="1"
+                             [(ngModel)]="newRollout.cooldownSeconds" required>
+                    </label>
+                  </div>
+                }
+                <div class="form-actions">
+                  <button type="button" class="button button-secondary" (click)="rolloutFormOpen = false">Cancel</button>
+                  <button type="submit" class="button button-primary"
+                          [disabled]="rolloutForm.invalid || busyAction === 'create-rollout'">
+                    {{ busyAction === 'create-rollout' ? 'Creating…' : 'Create rollout' }}
+                  </button>
+                </div>
+              </form>
+            }
+
+            @if (rolloutsLoading) {
+              <div class="loading-block" role="status"><span class="skeleton-line"></span><span>Loading rollouts</span></div>
+            } @else if (rollouts.length === 0) {
+              <section class="empty-state compact-empty">
+                <span class="empty-index">—</span>
+                <h2>No rollouts yet</h2>
+                <p>Select a feature and environment to stage a controlled release.</p>
+              </section>
+            } @else {
+              <div class="rollout-layout">
+                <section class="table-region" aria-label="Rollout list">
+                  <div class="table-scroll">
+                    <table>
+                      <thead><tr><th>Rollout</th><th>State</th><th>Exposure</th><th>Stages</th></tr></thead>
+                      <tbody>
+                        @for (rollout of rollouts; track rollout.id) {
+                          <tr [class.selected-row]="selectedRolloutId === rollout.id">
+                            <td><button type="button" class="feature-link"
+                                        (click)="selectedRolloutId = rollout.id">
+                              <span>{{ rollout.featureFlagId.slice(0, 8) }}</span>
+                              <small>{{ rollout.id.slice(0, 8) }}</small>
+                            </button></td>
+                            <td><span class="state-tag" [class.state-on]="rollout.status === 'IN_PROGRESS'"
+                                      [class.state-warn]="rollout.status === 'PAUSED'"
+                                      [class.state-off]="rollout.status === 'ROLLED_BACK'">
+                              {{ rollout.status.replace('_', ' ') }}
+                            </span></td>
+                            <td class="numeric-cell">{{ rollout.currentPercentage }}%</td>
+                            <td class="numeric-cell">{{ rollout.stages.length }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                @if (selectedRollout) {
+                  <section class="detail-region" aria-labelledby="rollout-detail-title">
+                    <div class="detail-heading">
+                      <div>
+                        <span class="detail-key">Release timetable</span>
+                        <h2 id="rollout-detail-title">{{ selectedRollout.id.slice(0, 8) }}</h2>
+                      </div>
+                      <span class="state-tag" [class.state-on]="selectedRollout.status === 'IN_PROGRESS'"
+                            [class.state-warn]="selectedRollout.status === 'PAUSED'">
+                        {{ selectedRollout.status.replace('_', ' ') }}
+                      </span>
+                    </div>
+                    <div class="stage-rail" aria-label="Rollout stages">
+                      @for (stage of selectedRollout.stages; track stage.stageOrder) {
+                        <div class="stage-stop" [class.stage-current]="stage.status === 'IN_PROGRESS'"
+                             [class.stage-done]="stage.status === 'COMPLETED'">
+                          <span class="stage-marker">{{ stage.stageOrder }}</span>
+                          <div><strong>{{ stage.targetPercentage }}%</strong><small>{{ stage.durationMinutes }} min</small></div>
+                        </div>
+                      }
+                    </div>
+                    @if (canWrite) {
+                      <div class="rollout-actions">
+                        @if (selectedRollout.status === 'DRAFT') {
+                          <button type="button" class="button button-primary"
+                                  (click)="applyRolloutAction(selectedRollout, 'start')">Start rollout</button>
+                        }
+                        @if (selectedRollout.status === 'IN_PROGRESS') {
+                          <button type="button" class="button button-secondary"
+                                  (click)="applyRolloutAction(selectedRollout, 'pause')">Pause</button>
+                          <button type="button" class="button button-primary"
+                                  (click)="applyRolloutAction(selectedRollout, 'advance')">Advance stage</button>
+                        }
+                        @if (selectedRollout.status === 'PAUSED') {
+                          <button type="button" class="button button-primary"
+                                  (click)="applyRolloutAction(selectedRollout, 'resume')">Resume</button>
+                        }
+                        @if (selectedRollout.status === 'IN_PROGRESS' || selectedRollout.status === 'PAUSED') {
+                          <button type="button" class="button button-danger"
+                                  (click)="applyRolloutAction(selectedRollout, 'rollback')">Roll back</button>
+                        }
+                      </div>
+                    }
+
+                    @if ((selectedRollout.status === 'IN_PROGRESS' || selectedRollout.status === 'PAUSED') && canWrite) {
+                      <form class="observation-form" (ngSubmit)="submitObservation()" #observation="ngForm">
+                        <div class="subsection-heading">
+                          <h3>Report health</h3>
+                          <span class="field-hint">Client-reported observation</span>
+                        </div>
+                        <div class="observation-fields">
+                          <label>Requests
+                            <input name="requestCount" type="number" min="0"
+                                   [(ngModel)]="observationForm.requestCount" required>
+                          </label>
+                          <label>Error rate
+                            <input name="errorRate" type="number" min="0" max="1" step="0.01"
+                                   [(ngModel)]="observationForm.errorRate" required>
+                          </label>
+                          <label>Latency · ms
+                            <input name="latencyMs" type="number" min="0"
+                                   [(ngModel)]="observationForm.latencyMs" required>
+                          </label>
+                        </div>
+                        <button type="submit" class="button button-secondary"
+                                [disabled]="observation.invalid || busyAction === 'observation'">
+                          {{ busyAction === 'observation' ? 'Recording…' : 'Record observation' }}
+                        </button>
+                        @if (observationResult; as result) {
+                          <p class="inline-note" role="status">
+                            {{ result.automaticallyPaused ? 'Policy paused this rollout.' : 'Observation recorded.' }}
+                          </p>
+                        }
+                      </form>
+                    } @else if (selectedRollout.status === 'IN_PROGRESS' || selectedRollout.status === 'PAUSED') {
+                      <p class="inline-note">Only administrators and developers can report health observations.</p>
+                    }
+                  </section>
+                }
+              </div>
+            }
+
+            @if (selectedFeature && selectedEnvironment) {
+              <section class="assignment-check" aria-labelledby="assignment-title">
+                <div>
+                  <h2 id="assignment-title">Assignment check</h2>
+                  <p>Same user, feature, and environment always produce the same bucket.</p>
+                </div>
+                <form (ngSubmit)="checkAssignment()" #assignment="ngForm">
+                  <label class="sr-only" for="assignment-user">Stable user ID</label>
+                  <input id="assignment-user" name="assignmentUser" [(ngModel)]="assignmentUserId"
+                         required maxlength="255" placeholder="Stable user ID">
+                  <button type="submit" class="button button-secondary"
+                          [disabled]="assignment.invalid || busyAction === 'assignment'">Check bucket</button>
+                </form>
+                @if (rolloutAssignment; as result) {
+                  <div class="assignment-result" role="status">
+                    <strong>Bucket {{ result.bucket }}</strong>
+                    <span>{{ result.assigned ? 'Assigned' : 'Not assigned' }} at {{ result.percentage }}%</span>
+                  </div>
+                }
+              </section>
+            }
+          </section>
+        }
+
+        @if (workspace === 'audit') {
+          <section aria-labelledby="audit-title">
+            <div class="page-heading">
+              <div>
+                <h1 id="audit-title">Audit history</h1>
+                <p>Immutable configuration and rollout events for this organization.</p>
+              </div>
+              <button type="button" class="button button-secondary" (click)="refreshAudit()"
+                      [disabled]="auditLoading || busyAction === 'load-audit'">
+                {{ auditLoading ? 'Refreshing…' : 'Refresh' }}
+              </button>
+            </div>
+            @if (auditLoading) {
+              <div class="loading-table" role="status" aria-label="Loading audit events">
+                <span></span><span></span><span></span>
+              </div>
+            } @else if (auditEvents.length === 0) {
+              <section class="empty-state compact-empty">
+                <span class="empty-index">—</span>
+                <h2>No audit events yet</h2>
+                <p>Published configuration and rollout changes will appear here.</p>
+              </section>
+            } @else {
+              <div class="table-region">
+                <div class="table-scroll">
+                  <table>
+                    <thead><tr><th>Event</th><th>Entity</th><th>Source</th><th>Occurred</th><th>Correlation</th></tr></thead>
+                    <tbody>
+                      @for (event of auditEvents; track event.eventId) {
+                        <tr>
+                          <td><strong>{{ event.eventType.replace('_', ' ') }}</strong><small>v{{ event.eventVersion }}</small></td>
+                          <td><span>{{ event.entityType }}</span><small>{{ event.entityId.slice(0, 8) }}</small></td>
+                          <td>{{ event.source }}</td>
+                          <td>{{ event.occurredAt | date:'medium' }}</td>
+                          <td class="numeric-cell">{{ event.correlationId || '—' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+          </section>
+        }
+      </main>
+    </div>
+  </div>
+}

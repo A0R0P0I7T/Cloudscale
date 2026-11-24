@@ -4,7 +4,7 @@ spring:
   datasource:
     url: ${CONFIG_DATABASE_URL:${DATABASE_URL:jdbc:postgresql://localhost:15432/cloudscale_config}}
     username: ${POSTGRES_USER:cloudscale}
-    password: ${POSTGRES_PASSWORD:change-me}
+    password: ${POSTGRES_PASSWORD:}
     hikari:
       maximum-pool-size: 5
   flyway:
@@ -20,6 +20,11 @@ spring:
       properties:
         enable.idempotence: true
 
+cloudscale:
+  jwt:
+    issuer: ${JWT_ISSUER:cloudscale-auth}
+    secret: ${JWT_SECRET:}
+
 server:
   port: ${SERVER_PORT:8082}
 
@@ -32,9 +37,8 @@ management:
     health:
       probes:
         enabled: true
-      show-details: always
+      show-details: never
 
 info:
   app:
     name: CloudScale Configuration Service
-    phase: 5

@@ -3,6 +3,32 @@ spring:
     name: gateway
   cloud:
     gateway:
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_BASE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+          order: 0
+        - id: evaluation-service
+          uri: ${EVALUATION_SERVICE_BASE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/organizations/*/projects/*/environments/*/features/*/evaluate
+          order: 1
+        - id: rollout-service
+          uri: ${ROLLOUT_SERVICE_BASE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/organizations/*/rollouts/**
+          order: 2
+        - id: audit-service
+          uri: ${AUDIT_SERVICE_BASE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/organizations/*/audit-events/**
+          order: 3
+        - id: config-service
+          uri: ${CONFIG_SERVICE_BASE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/organizations/**
+          order: 10
       globalcors:
         cors-configurations:
           '[/**]':
@@ -17,6 +43,11 @@ spring:
             allowed-headers: "*"
             allow-credentials: true
 
+cloudscale:
+  jwt:
+    issuer: ${JWT_ISSUER:cloudscale-auth}
+    secret: ${JWT_SECRET:}
+
 server:
   port: ${SERVER_PORT:8080}
 
@@ -29,10 +60,8 @@ management:
     health:
       probes:
         enabled: true
-      show-details: always
+      show-details: never
 
 info:
   app:
     name: CloudScale API Gateway
-    phase: 2
-

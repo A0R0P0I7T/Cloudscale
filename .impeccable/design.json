@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-24T04:31:23Z",
+  "title": "Design System: CloudScale",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Harbor Teal",
+        "canonical": "#1c625e",
+        "tonalRamp": ["oklch(15.0% 0.029 189.5)", "oklch(25.0% 0.049 189.5)", "oklch(35.0% 0.068 189.5)", "oklch(45.0% 0.068 189.5)", "oklch(55.0% 0.068 189.5)", "oklch(65.0% 0.068 189.5)", "oklch(80.0% 0.068 189.5)", "oklch(95.0% 0.023 189.5)"]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Harbor Teal Deep",
+        "canonical": "#174f4c",
+        "tonalRamp": ["oklch(15.0% 0.025 190.0)", "oklch(25.0% 0.041 190.0)", "oklch(35.0% 0.057 190.0)", "oklch(45.0% 0.057 190.0)", "oklch(55.0% 0.057 190.0)", "oklch(65.0% 0.057 190.0)", "oklch(80.0% 0.057 190.0)", "oklch(95.0% 0.019 190.0)"]
+      },
+      "signal-amber": {
+        "role": "secondary",
+        "displayName": "Signal Amber",
+        "canonical": "#bd8120",
+        "tonalRamp": ["oklch(15.0% 0.055 73.4)", "oklch(25.0% 0.091 73.4)", "oklch(35.0% 0.128 73.4)", "oklch(45.0% 0.128 73.4)", "oklch(55.0% 0.128 73.4)", "oklch(65.0% 0.128 73.4)", "oklch(80.0% 0.128 73.4)", "oklch(95.0% 0.043 73.4)"]
+      },
+      "signal-amber-deep": {
+        "role": "secondary",
+        "displayName": "Signal Amber Deep",
+        "canonical": "#76500f",
+        "tonalRamp": ["oklch(15.0% 0.039 74.8)", "oklch(25.0% 0.065 74.8)", "oklch(35.0% 0.091 74.8)", "oklch(45.0% 0.091 74.8)", "oklch(55.0% 0.091 74.8)", "oklch(65.0% 0.091 74.8)", "oklch(80.0% 0.091 74.8)", "oklch(95.0% 0.030 74.8)"]
+      },
+      "page": {
+        "role": "neutral",
+        "displayName": "Cool Paper",
+        "canonical": "#edf1ef",
+        "tonalRamp": ["oklch(15.0% 0.002 165.0)", "oklch(25.0% 0.004 165.0)", "oklch(35.0% 0.005 165.0)", "oklch(45.0% 0.005 165.0)", "oklch(55.0% 0.005 165.0)", "oklch(65.0% 0.005 165.0)", "oklch(80.0% 0.005 165.0)", "oklch(95.0% 0.002 165.0)"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Clean Surface",
+        "canonical": "#fbfcfa",
+        "tonalRamp": ["oklch(15.0% 0.001 128.5)", "oklch(25.0% 0.002 128.5)", "oklch(35.0% 0.003 128.5)", "oklch(45.0% 0.003 128.5)", "oklch(55.0% 0.003 128.5)", "oklch(65.0% 0.003 128.5)", "oklch(80.0% 0.003 128.5)", "oklch(95.0% 0.001 128.5)"]
+      },
+      "surface-dim": {
+        "role": "neutral",
+        "displayName": "Muted Surface",
+        "canonical": "#e5ece9",
+        "tonalRamp": ["oklch(15.0% 0.004 168.7)", "oklch(25.0% 0.006 168.7)", "oklch(35.0% 0.008 168.7)", "oklch(45.0% 0.008 168.7)", "oklch(55.0% 0.008 168.7)", "oklch(65.0% 0.008 168.7)", "oklch(80.0% 0.008 168.7)", "oklch(95.0% 0.003 168.7)"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Deep Ink",
+        "canonical": "#142c33",
+        "tonalRamp": ["oklch(15.0% 0.014 218.9)", "oklch(25.0% 0.023 218.9)", "oklch(35.0% 0.033 218.9)", "oklch(45.0% 0.033 218.9)", "oklch(55.0% 0.033 218.9)", "oklch(65.0% 0.033 218.9)", "oklch(80.0% 0.033 218.9)", "oklch(95.0% 0.011 218.9)"]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft Ink",
+        "canonical": "#53676d",
+        "tonalRamp": ["oklch(15.0% 0.011 217.9)", "oklch(25.0% 0.018 217.9)", "oklch(35.0% 0.026 217.9)", "oklch(45.0% 0.026 217.9)", "oklch(55.0% 0.026 217.9)", "oklch(65.0% 0.026 217.9)", "oklch(80.0% 0.026 217.9)", "oklch(95.0% 0.009 217.9)"]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Mist Line",
+        "canonical": "#c9d5d1",
+        "tonalRamp": ["oklch(15.0% 0.006 174.1)", "oklch(25.0% 0.010 174.1)", "oklch(35.0% 0.014 174.1)", "oklch(45.0% 0.014 174.1)", "oklch(55.0% 0.014 174.1)", "oklch(65.0% 0.014 174.1)", "oklch(80.0% 0.014 174.1)", "oklch(95.0% 0.005 174.1)"]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Mist Line Strong",
+        "canonical": "#aebfba",
+        "tonalRamp": ["oklch(15.0% 0.009 176.3)", "oklch(25.0% 0.014 176.3)", "oklch(35.0% 0.020 176.3)", "oklch(45.0% 0.020 176.3)", "oklch(55.0% 0.020 176.3)", "oklch(65.0% 0.020 176.3)", "oklch(80.0% 0.020 176.3)", "oklch(95.0% 0.007 176.3)"]
+      },
+      "rail": {
+        "role": "neutral",
+        "displayName": "Deep Teal Rail",
+        "canonical": "#17373b",
+        "tonalRamp": ["oklch(15.0% 0.016 206.2)", "oklch(25.0% 0.027 206.2)", "oklch(35.0% 0.038 206.2)", "oklch(45.0% 0.038 206.2)", "oklch(55.0% 0.038 206.2)", "oklch(65.0% 0.038 206.2)", "oklch(80.0% 0.038 206.2)", "oklch(95.0% 0.013 206.2)"]
+      },
+      "rail-muted": {
+        "role": "neutral",
+        "displayName": "Rail Mist",
+        "canonical": "#afc2bd",
+        "tonalRamp": ["oklch(15.0% 0.009 178.2)", "oklch(25.0% 0.016 178.2)", "oklch(35.0% 0.022 178.2)", "oklch(45.0% 0.022 178.2)", "oklch(55.0% 0.022 178.2)", "oklch(65.0% 0.022 178.2)", "oklch(80.0% 0.022 178.2)", "oklch(95.0% 0.007 178.2)"]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Forest Green",
+        "canonical": "#28634d",
+        "tonalRamp": ["oklch(15.0% 0.031 166.0)", "oklch(25.0% 0.051 166.0)", "oklch(35.0% 0.072 166.0)", "oklch(45.0% 0.072 166.0)", "oklch(55.0% 0.072 166.0)", "oklch(65.0% 0.072 166.0)", "oklch(80.0% 0.072 166.0)", "oklch(95.0% 0.024 166.0)"]
+      },
+      "success-wash": {
+        "role": "tertiary",
+        "displayName": "Forest Wash",
+        "canonical": "#deece4",
+        "tonalRamp": ["oklch(15.0% 0.008 161.1)", "oklch(25.0% 0.013 161.1)", "oklch(35.0% 0.018 161.1)", "oklch(45.0% 0.018 161.1)", "oklch(55.0% 0.018 161.1)", "oklch(65.0% 0.018 161.1)", "oklch(80.0% 0.018 161.1)", "oklch(95.0% 0.006 161.1)"]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Brick Red",
+        "canonical": "#922f29",
+        "tonalRamp": ["oklch(15.0% 0.058 27.3)", "oklch(25.0% 0.096 27.3)", "oklch(35.0% 0.135 27.3)", "oklch(45.0% 0.135 27.3)", "oklch(55.0% 0.135 27.3)", "oklch(65.0% 0.135 27.3)", "oklch(80.0% 0.135 27.3)", "oklch(95.0% 0.045 27.3)"]
+      },
+      "danger-wash": {
+        "role": "tertiary",
+        "displayName": "Brick Wash",
+        "canonical": "#f3e1dd",
+        "tonalRamp": ["oklch(15.0% 0.009 32.5)", "oklch(25.0% 0.015 32.5)", "oklch(35.0% 0.021 32.5)", "oklch(45.0% 0.021 32.5)", "oklch(55.0% 0.021 32.5)", "oklch(65.0% 0.021 32.5)", "oklch(80.0% 0.021 32.5)", "oklch(95.0% 0.007 32.5)"]
+      }
+    },
+    "shadows": [
+      {
+        "name": "selected-auth-mode",
+        "value": "0 1px 3px rgb(20 44 51 / 12%)",
+        "purpose": "Small separation for the selected sign-in mode only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Brief press and state feedback."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce",
+        "purpose": "Removes authored movement when the user requests less motion."
+      }
+    ],
+    "breakpoints": [
+      { "name": "wide-to-intermediate", "value": "1050px" },
+      { "name": "rail-collapse", "value": "820px" },
+      { "name": "phone", "value": "560px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main state-changing action; disabled state stays readable.",
+      "html": "<button class=\"ds-button-primary\" type=\"button\">Create feature</button>",
+      "css": ".ds-button-primary { min-height: 2.55rem; padding: 0.55rem 0.9rem; border: 1px solid transparent; border-radius: 0.45rem; color: #fff; background: #1c625e; font: 650 0.82rem ui-sans-serif, system-ui, sans-serif; transition: transform 130ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms ease-out; } .ds-button-primary:hover:not(:disabled) { background: #174f4c; } .ds-button-primary:active { transform: scale(0.98); } .ds-button-primary:focus-visible { outline: 3px solid #bd8120; outline-offset: 2px; } .ds-button-primary:disabled { border-color: #aebfba; color: #53676d; background: #dbe5e1; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting action with a full border and surface fill.",
+      "html": "<button class=\"ds-button-secondary\" type=\"button\">Cancel</button>",
+      "css": ".ds-button-secondary { min-height: 2.55rem; padding: 0.55rem 0.9rem; border: 1px solid #aebfba; border-radius: 0.45rem; color: #142c33; background: #fbfcfa; font: 650 0.82rem ui-sans-serif, system-ui, sans-serif; transition: transform 130ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms ease-out; } .ds-button-secondary:hover:not(:disabled) { border-color: #6c8581; background: #f4f7f4; } .ds-button-secondary:active { transform: scale(0.98); } .ds-button-secondary:focus-visible { outline: 3px solid #bd8120; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "text-field",
+      "description": "Full-width field with visible focus and readable placeholder.",
+      "html": "<label class=\"ds-field\">Organization slug<input placeholder=\"northstar\"></label>",
+      "css": ".ds-field { display: grid; gap: 0.35rem; color: #142c33; font: 650 0.76rem ui-sans-serif, system-ui, sans-serif; } .ds-field input { width: 100%; min-height: 2.55rem; padding: 0.56rem 0.65rem; border: 1px solid #aebfba; border-radius: 0.38rem; color: #142c33; background: #fff; font: 450 0.83rem ui-sans-serif, system-ui, sans-serif; } .ds-field input::placeholder { color: #78878a; opacity: 1; } .ds-field input:focus-visible { outline: 3px solid #bd8120; outline-offset: 2px; }"
+    },
+    {
+      "name": "Workspace Navigation Item",
+      "kind": "nav",
+      "description": "Familiar rail navigation with a quiet selected surface.",
+      "html": "<button class=\"ds-nav-item\" type=\"button\" aria-current=\"page\">Feature flags</button>",
+      "css": ".ds-nav-item { min-height: 2.9rem; padding: 0.55rem 0.6rem; border: 1px solid transparent; border-radius: 0.55rem; color: #e0e8e5; background: #17373b; text-align: left; font: 500 0.88rem ui-sans-serif, system-ui, sans-serif; transition: background-color 150ms ease-out, color 150ms ease-out, transform 130ms cubic-bezier(0.23, 1, 0.32, 1); } .ds-nav-item:hover { color: #fff; background: rgb(255 255 255 / 8%); } .ds-nav-item[aria-current=\"page\"] { border-color: rgb(235 189 87 / 38%); color: #fff; background: rgb(235 189 87 / 12%); } .ds-nav-item:active { transform: scale(0.98); } .ds-nav-item:focus-visible { outline: 3px solid #bd8120; outline-offset: 2px; }"
+    },
+    {
+      "name": "State Tag",
+      "kind": "chip",
+      "description": "Compact semantic state; color is paired with a text label.",
+      "html": "<span class=\"ds-state-tag ds-state-on\"><span class=\"ds-dot\"></span>Enabled</span>",
+      "css": ".ds-state-tag { display: inline-flex; align-items: center; gap: 0.38rem; padding: 0.28rem 0.48rem; border: 1px solid #bcd7c7; border-radius: 999px; color: #235a3a; background: #deece4; font: 700 0.68rem ui-sans-serif, system-ui, sans-serif; } .ds-dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: #28634d; } .ds-state-tag:focus-visible { outline: 3px solid #bd8120; outline-offset: 2px; }"
+    },
+    {
+      "name": "Data Panel",
+      "kind": "card",
+      "description": "Flat, full-border container for tables and operation details.",
+      "html": "<section class=\"ds-data-panel\"><h2>Feature flags</h2><p>Configuration entries appear here.</p></section>",
+      "css": ".ds-data-panel { min-width: 0; padding: 1rem; border: 1px solid #c9d5d1; border-radius: 0.5rem; color: #142c33; background: #fbfcfa; font: 400 0.9rem/1.5 ui-sans-serif, system-ui, sans-serif; } .ds-data-panel h2 { margin: 0 0 0.5rem; font-size: 1rem; font-weight: 640; } .ds-data-panel p { margin: 0; color: #53676d; }"
+    },
+    {
+      "name": "Release Stage Marker",
+      "kind": "custom",
+      "description": "Ordered progress marker where sequence is meaningful.",
+      "html": "<div class=\"ds-stage\"><span class=\"ds-stage-marker\">2</span><strong>50%</strong><small>10 min</small></div>",
+      "css": ".ds-stage { display: grid; grid-template-columns: 1rem auto; align-items: center; gap: 0.45rem; color: #142c33; font: 500 0.8rem ui-monospace, SFMono-Regular, Menlo, monospace; } .ds-stage-marker { display: grid; width: 1rem; height: 1rem; place-items: center; border: 1px solid #bd8120; border-radius: 50%; color: #5d4110; background: #f0cc78; font-size: 0.58rem; } .ds-stage small { grid-column: 2; color: #53676d; font: 400 0.66rem ui-sans-serif, system-ui, sans-serif; } .ds-stage:focus-visible { outline: 3px solid #bd8120; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Release Ledger",
+    "overview": "CloudScale is a working surface for changing configuration deliberately. The visual language is restrained and confident: clear scope, legible state, and a short path from inspection to action. A deep teal navigation rail anchors the light workspace; amber marks active release progress, while green and red remain semantic.",
+    "keyCharacteristics": [
+      "Configuration state is visible before mutation.",
+      "The release timetable appears only where stages carry operational meaning.",
+      "Monospaced text is reserved for keys, IDs, and measured values.",
+      "Borders and tonal surfaces carry hierarchy; motion is brief state feedback."
+    ],
+    "rules": [
+      {
+        "name": "The Signal-Only Rule",
+        "body": "Amber is reserved for active progression or caution; it is not a general decorative accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Data-Has-a-Job Rule",
+        "body": "Monospaced type is used only when values benefit from alignment or code-like distinction.",
+        "section": "typography"
+      },
+      {
+        "name": "The Border-First Rule",
+        "body": "Use a full border or surface tint before adding elevation. Reserve shadows for a specific interaction state.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep organization, project, and environment scope visible before an operation.",
+      "Do use green, red, and amber only for their established semantic states.",
+      "Do keep focus visible and honor reduced-motion preferences.",
+      "Do show loading, empty, validation, permission, success, and error states honestly."
+    ],
+    "donts": [
+      "Don't add percentage exposure to Evaluation until the feature-value contract defines treatment/control behavior.",
+      "Don't imply automatic rollback; health observations pause rollouts and rollback is manual.",
+      "Don't add decorative section numbering, arbitrary dashboards, broad drop shadows, or fake/demo actions.",
+      "Don't use monospace for ordinary labels or body copy."
+    ]
+  }
+}

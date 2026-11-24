@@ -39,6 +39,7 @@ public class EvaluationApplicationService {
             String environmentKey,
             String featureKey,
             EvaluationRequest request,
+            String authorizationHeader,
             String correlationId
     ) {
         Instant startedAt = Instant.now();
@@ -58,7 +59,7 @@ public class EvaluationApplicationService {
             }
             try {
                 configuration = configurationClient.getEvaluationConfiguration(
-                        organizationId, projectKey, environmentKey, featureKey, correlationId);
+                        organizationId, projectKey, environmentKey, featureKey, authorizationHeader, correlationId);
                 metrics.configurationFetch("success");
             } catch (RuntimeException exception) {
                 metrics.configurationFetch("error");

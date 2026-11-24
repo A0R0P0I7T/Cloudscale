@@ -40,7 +40,7 @@ public class EvaluationCache {
             local ttl = tonumber(ARGV[2])
             
             local currentRev = tonumber(redis.call('GET', revKey) or '-1')
-            if eventRev >= currentRev then
+            if eventRev > currentRev then
                 redis.call('DEL', dataKey)
                 redis.call('SET', revKey, eventRev, 'EX', ttl)
                 return 1
@@ -95,18 +95,13 @@ public class EvaluationCache {
     }
 
     public boolean invalidate(String key, long revision) {
-        try {
-            String revKey = key + ":revision";
-            Long result = redis.execute(
-                    new org.springframework.data.redis.core.script.DefaultRedisScript<>(INVALIDATE_SCRIPT, Long.class),
-                    java.util.List.of(key, revKey),
-                    String.valueOf(revision),
-                    String.valueOf(ttl.getSeconds())
-            );
-            return result != null && result == 1L;
-        } catch (DataAccessException exception) {
-            log.warn("Evaluation cache invalidation failed for key {}", key, exception);
-            return false;
-        }
+        String revKey = key + ":revision";
+        Long result = redis.execute(
+                new org.springframework.data.redis.core.script.DefaultRedisScript<>(INVALIDATE_SCRIPT, Long.class),
+                java.util.List.of(key, revKey),
+                String.valueOf(revision),
+                String.valueOf(ttl.getSeconds())
+        );
+        return result != null && result == 1L;
     }
 }
