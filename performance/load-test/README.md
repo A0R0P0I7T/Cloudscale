@@ -2,7 +2,7 @@
 
 `evaluation-benchmark.mjs` is a dependency-free Node.js harness. It refuses non-local targets, registers a unique benchmark organization, creates a dedicated project/environment and published flags, verifies each response, and never stores or prints bearer tokens or passwords.
 
-It measures end-to-end requests through the local Gateway at concurrency 1, 5, 10, and 25. Each warm scenario runs for at least 60 seconds and at least 1,000 successful evaluations; concurrency 10 is repeated three times for the primary median. It then reports a cold-cache sample using 20 unique published feature keys, each evaluated once. No cache is flushed.
+It measures end-to-end requests through the local Gateway at concurrency 1, 5, 10, and 25. Each warm scenario runs for at least 60 seconds and at least 1,000 successful evaluations; concurrency 10 is repeated three times for the primary median. Each run verifies a cache hit immediately before timing starts. The app's default cache TTL is 60 seconds, equal to the minimum run length, so report the observed per-run cache/fetch deltas and treat any TTL-boundary misses as part of the measured result rather than calling the entire interval cache-hit-only. It then reports a cold-cache sample using 20 unique published feature keys, each evaluated once. No cache is flushed.
 
 Run only against a local Compose project, with the same restricted env file used to start it:
 

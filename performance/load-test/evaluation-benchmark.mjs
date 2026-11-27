@@ -4,6 +4,7 @@ import { cpus, freemem, platform, release, totalmem } from 'node:os';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 import process from 'node:process';
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:8080';
@@ -46,6 +47,15 @@ export function summarizeLatencies(latenciesMs, failures, durationSeconds, reque
     throughputRps: durationSeconds <= 0 ? 0 : succeeded / durationSeconds,
     durationSeconds,
   };
+}
+
+export function assertEvaluationMatches(response, expectedFeatureKey, expectedValue) {
+  if (response?.featureKey !== expectedFeatureKey
+    || response.enabled !== true
+    || !isDeepStrictEqual(response.value, expectedValue)) {
+    throw new Error(`Evaluation returned an unexpected result for benchmark feature ${expectedFeatureKey}.`);
+  }
+  return response;
 }
 
 function projectRoot() {
@@ -161,11 +171,7 @@ async function evaluate(baseUrl, token, context, featureKey) {
     userId: 'evaluation-benchmark-stable-user',
     attributes: { benchmark: true },
   }, token);
-  if (response.featureKey !== featureKey || response.enabled !== true
-    || JSON.stringify(response.value) !== JSON.stringify(context.value)) {
-    throw new Error(`Evaluation result changed for benchmark feature ${featureKey}.`);
-  }
-  return response;
+  return assertEvaluationMatches(response, featureKey, context.value);
 }
 
 async function measureScenario({ baseUrl, token, context, featureKey, concurrency, label, deadline }) {

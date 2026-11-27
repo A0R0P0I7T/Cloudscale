@@ -1,6 +1,8 @@
 {
   "status": "blocked",
   "createdAt": "2026-11-24",
+  "supersededBy": "evaluation-2026-11-24T151843349Z-38ead2.json",
+  "startupBlockerResolvedIn": "rollout-service/src/main/java/com/cloudscale/rollout/config/RolloutDomainConfiguration.java",
   "target": "http://127.0.0.1:8080",
   "topology": "Gateway end-to-end; no evaluation request was sent",
   "workingTree": "pre-existing uncommitted master changes preserved",
@@ -19,8 +21,10 @@
   "localSetup": {
     "projectName": "cloudscale-eval-bench-20261124t142509z",
     "configValidation": "docker compose config --quiet passed",
+    "firstComposeAttempt": "Failed because docker-credential-desktop was absent from PATH; rerun with Docker.app/Contents/Resources/bin prepended.",
     "randomLocalCredentials": "generated into a mode-0600 temp env file outside the repository; values not recorded",
     "images": "all 7 application images built; required infrastructure images pulled",
+    "benchmarkHarnessTests": "node --test performance/load-test/evaluation-benchmark.test.mjs: 3 passed, 0 failed",
     "volumes": [
       "cloudscale-eval-bench-20261124t142509z_postgres-data",
       "cloudscale-eval-bench-20261124t142509z_redis-data",
@@ -40,6 +44,13 @@
       "evaluation-service",
       "audit-service"
     ],
+    "serviceStates": {
+      "rollout-service": "exited (1)",
+      "gateway": "created; blocked on rollout-service health",
+      "frontend": "created; blocked on Gateway health",
+      "prometheus": "created; blocked on service health",
+      "grafana": "created; blocked on Prometheus"
+    },
     "failedService": "rollout-service",
     "blockedServices": [
       "gateway",
@@ -48,7 +59,7 @@
       "grafana"
     ],
     "failure": "Application context failed: no qualifying bean of type com.cloudscale.rollout.domain.RolloutRules for RolloutApplicationService constructor parameter 2.",
-    "evidence": "RolloutRules is a plain class without a Spring component annotation or bean factory; RolloutApplicationService requires constructor injection. Rollout V1/V2 migrations completed before application context failed."
+    "evidence": "RolloutRules is a plain class without a Spring component annotation or bean factory; RolloutApplicationService requires constructor injection. Rollout V1/V2 migrations completed before application context failed. Captured excerpt: rollout-startup-blocker.log."
   },
   "benchmark": {
     "authenticationRequests": 0,
@@ -61,5 +72,5 @@
     "prometheusDeltas": null,
     "cpuMemoryDuringLoad": "not measured"
   },
-  "nextAction": "Fix RolloutRules Spring bean registration in a separate application change, rebuild/restart the local Compose stack, confirm every required service healthy, then rerun node performance/load-test/evaluation-benchmark.mjs."
+  "nextAction": "In a separate application change, register the real RolloutRules implementation as a Spring bean (or declare it in configuration), add a context/wiring test, rebuild using a fresh Compose project name and fresh credentials because the previous env file was removed, confirm required services healthy, then rerun node performance/load-test/evaluation-benchmark.mjs."
 }

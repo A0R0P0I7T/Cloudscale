@@ -152,4 +152,4 @@ npm test -- --code-coverage
 npm audit
 ```
 
-Testcontainers tests run when Docker is available and skip otherwise. Docker-backed integration tests, Compose startup, Prometheus scraping, and runtime performance checks must be run on a machine with a working Docker daemon. See [`docs/metrics-report.md`](docs/metrics-report.md) for the latest exact results and unmeasured metrics, and [`docs/audit-report.md`](docs/audit-report.md) for the audit/status matrix.
+Testcontainers tests run when Docker is available and skip otherwise. Docker-backed Testcontainers integration checks remain unverified in this environment. Compose startup, service health, and Prometheus scraping were verified during the local evaluation benchmark; latency and throughput measurements and their limits are recorded in [`performance/load-test/results/evaluation-local-20261124.md`](performance/load-test/results/evaluation-local-20261124.md). See [`docs/metrics-report.md`](docs/metrics-report.md) for other measured and unmeasured metrics and [`docs/audit-report.md`](docs/audit-report.md) for the audit/status matrix.
